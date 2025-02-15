@@ -1,4 +1,4 @@
-package com.nureka.rest_api_mysql.util;
+package com.nureka.rest_api_mysql.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Component
-public class JwtUtil {
-
+public class TokenProvider {
     @Value("${jwt.secret}")
     private String secret;
     private Key signingKey;

@@ -1,5 +1,6 @@
 package com.nureka.rest_api_mysql.service;
 
+import com.nureka.rest_api_mysql.config.TokenProvider;
 import com.nureka.rest_api_mysql.model.PasswordResetToken;
 import com.nureka.rest_api_mysql.model.User;
 import com.nureka.rest_api_mysql.repository.PasswordResetTokenRepository;
@@ -12,7 +13,6 @@ import com.nureka.rest_api_mysql.response.FinaliseResetPasswordResponse;
 import com.nureka.rest_api_mysql.response.InitiateResetPasswordResponse;
 import com.nureka.rest_api_mysql.response.LoginResponse;
 import com.nureka.rest_api_mysql.response.RegisterResponse;
-import com.nureka.rest_api_mysql.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,15 +26,15 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final TokenProvider tokenProvider;
     private final EmailService emailService;
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordResetTokenRepository passwordResetTokenRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, EmailService emailService) {
+    public AuthService(UserRepository userRepository, PasswordResetTokenRepository passwordResetTokenRepository, PasswordEncoder passwordEncoder, TokenProvider tokenProvider, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
+        this.tokenProvider = tokenProvider;
         this.emailService = emailService;
     }
 
@@ -72,7 +72,7 @@ public class AuthService {
         }
 
         // Generate a JWT token
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = tokenProvider.generateToken(user.getEmail());
 
         return new LoginResponse(user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole().name(), token);
     }
@@ -87,7 +87,7 @@ public class AuthService {
         passwordResetTokenRepository.deleteByUserId(user);
 
         // Create a new token
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = tokenProvider.generateToken(user.getEmail());
         PasswordResetToken passwordResetToken = new PasswordResetToken();
         passwordResetToken.setUserId(user);
         passwordResetToken.setToken(token);
