@@ -1,11 +1,12 @@
 package com.nureka.rest_api_mysql.util;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -16,16 +17,15 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    private final String secret;
 
-    public JwtUtil() {
-        Dotenv dotenv = Dotenv.load();
-        this.secret = dotenv.get("JWT_SECRET");
-    }
+    @Value("${jwt.secret}")
+    private String secret;
+    private Key signingKey;
 
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(this.secret);
-        return Keys.hmacShaKeyFor(keyBytes);
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String extractUsername(String token) {
@@ -43,7 +43,7 @@ public class JwtUtil {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -64,7 +64,7 @@ public class JwtUtil {
                 .setSubject(userName)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
