@@ -29,25 +29,25 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<CommonResponse<HashMap<String, Object>>> registerUser(@Validated @RequestBody RegisterRequest registerRequest) {
-        CommonResponse<HashMap<String, Object>> registerResponse = authService.registerUser(registerRequest);
-        return new ResponseEntity<>(registerResponse, HttpStatus.valueOf(registerResponse.getStatus()));
+        CommonResponse<HashMap<String, Object>> response = authService.registerUser(registerRequest);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
     }
 
     @PostMapping("/login")
     public ResponseEntity<CommonResponse<HashMap<String, Object>>> login(@Validated @RequestBody LoginRequest loginRequest) {
-        CommonResponse<HashMap<String, Object>> loginResponse = authService.loginUser(loginRequest);
-        return new ResponseEntity<>(loginResponse, HttpStatus.valueOf(loginResponse.getStatus()));
+        CommonResponse<HashMap<String, Object>> response = authService.loginUser(loginRequest);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
     }
 
     @PostMapping("/initiate-reset-password")
     public ResponseEntity<CommonResponse<HashMap<String, Object>>> initiateResetPassword(@Validated @RequestBody InitiateResetPasswordRequest initiateResetPasswordRequest) {
-        CommonResponse<HashMap<String, Object>> initiateResetPasswordResponse = authService.initiateResetPassword(initiateResetPasswordRequest);
-        return new ResponseEntity<>(initiateResetPasswordResponse, HttpStatus.valueOf(initiateResetPasswordResponse.getStatus()));
+        CommonResponse<HashMap<String, Object>> response = authService.initiateResetPassword(initiateResetPasswordRequest);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
     }
 
     @PostMapping("/finalise-reset-password")
     public ResponseEntity<CommonResponse<HashMap<String, Object>>> finaliseResetPassword(@Validated @RequestBody FinaliseResetPasswordRequest finaliseResetPasswordRequest) {
-        CommonResponse<HashMap<String, Object>> finaliseResetPasswordResponse = authService.finaliseResetPassword(finaliseResetPasswordRequest);
-        return new ResponseEntity<>(finaliseResetPasswordResponse, HttpStatus.valueOf(finaliseResetPasswordResponse.getStatus()));
+        CommonResponse<HashMap<String, Object>> response = authService.finaliseResetPassword(finaliseResetPasswordRequest);
+        return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
     }
 }
