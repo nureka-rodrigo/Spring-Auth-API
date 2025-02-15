@@ -72,7 +72,7 @@ public class AuthService {
         }
 
         // Generate a JWT token
-        String token = tokenProvider.generateToken(user.getEmail());
+        String token = tokenProvider.generateToken(user.getEmail(), loginRequest.isRememberMe());
 
         return new LoginResponse(user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole().name(), token);
     }
@@ -87,7 +87,7 @@ public class AuthService {
         passwordResetTokenRepository.deleteByUserId(user);
 
         // Create a new token
-        String token = tokenProvider.generateToken(user.getEmail());
+        String token = tokenProvider.generateToken(user.getEmail(), false);
         PasswordResetToken passwordResetToken = new PasswordResetToken();
         passwordResetToken.setUserId(user);
         passwordResetToken.setToken(token);

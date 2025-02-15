@@ -52,17 +52,17 @@ public class TokenProvider {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, boolean rememberMe) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
+        return createToken(claims, username, rememberMe);
     }
 
-    private String createToken(Map<String, Object> claims, String userName) {
+    private String createToken(Map<String, Object> claims, String userName, boolean rememberMe) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userName)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
+                .setExpiration(rememberMe ? new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7) : new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
                 .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
