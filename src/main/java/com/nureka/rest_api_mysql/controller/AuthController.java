@@ -1,6 +1,8 @@
 package com.nureka.rest_api_mysql.controller;
 
+import com.nureka.rest_api_mysql.request.LoginRequest;
 import com.nureka.rest_api_mysql.request.RegisterRequest;
+import com.nureka.rest_api_mysql.response.LoginResponse;
 import com.nureka.rest_api_mysql.response.RegisterResponse;
 import com.nureka.rest_api_mysql.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,5 +28,11 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> registerUser(@Validated @RequestBody RegisterRequest registerRequest) {
         RegisterResponse registerResponse = authService.registerUser(registerRequest);
         return new ResponseEntity<>(registerResponse, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Validated @RequestBody LoginRequest loginRequest) {
+        LoginResponse loginResponse = authService.loginUser(loginRequest);
+        return new ResponseEntity<>(loginResponse, HttpStatus.OK);
     }
 }
