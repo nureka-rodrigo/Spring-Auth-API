@@ -9,17 +9,16 @@ import com.nureka.rest_api_mysql.request.FinaliseResetPasswordRequest;
 import com.nureka.rest_api_mysql.request.InitiateResetPasswordRequest;
 import com.nureka.rest_api_mysql.request.LoginRequest;
 import com.nureka.rest_api_mysql.request.RegisterRequest;
-import com.nureka.rest_api_mysql.response.FinaliseResetPasswordResponse;
-import com.nureka.rest_api_mysql.response.InitiateResetPasswordResponse;
-import com.nureka.rest_api_mysql.response.LoginResponse;
-import com.nureka.rest_api_mysql.response.RegisterResponse;
+import com.nureka.rest_api_mysql.response.CommonResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 
 @Service
 public class AuthService {
@@ -28,6 +27,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final EmailService emailService;
+    @Value("${app.url}")
+    private String appUrl;
+    @Value("${server.port}")
+    private String serverPort;
 
     @Autowired
     public AuthService(UserRepository userRepository, PasswordResetTokenRepository passwordResetTokenRepository, PasswordEncoder passwordEncoder, TokenProvider tokenProvider, EmailService emailService) {
@@ -38,94 +41,117 @@ public class AuthService {
         this.emailService = emailService;
     }
 
-    public RegisterResponse registerUser(RegisterRequest registerRequest) {
-        // Check if the email is already in use
-        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already in use");
+    public CommonResponse<HashMap<String, Object>> registerUser(RegisterRequest registerRequest) {
+        try {
+            if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+                return new CommonResponse<>(Instant.now(), 400, "Email already exists", null);
+            }
+
+            if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
+                return new CommonResponse<>(Instant.now(), 400, "Passwords do not match", null);
+            }
+
+            User user = new User();
+            user.setFirstName(registerRequest.getFirstName());
+            user.setLastName(registerRequest.getLastName());
+            user.setEmail(registerRequest.getEmail());
+            user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+            user.setRole(User.Role.USER);
+            user.setCreatedAt(Instant.now());
+
+            user = userRepository.save(user);
+
+            HashMap<String, Object> data = new HashMap<>();
+            data.put("firstName", user.getFirstName());
+            data.put("lastName", user.getLastName());
+            data.put("email", user.getEmail());
+            data.put("role", user.getRole().name());
+
+            return new CommonResponse<>(Instant.now(), 201, "User registered successfully", data);
+        } catch (Exception e) {
+            return new CommonResponse<>(Instant.now(), 500, e.getMessage(), null);
         }
-
-        // Check if the password and confirm password match
-        if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
-            throw new IllegalArgumentException("Passwords do not match");
-        }
-
-        // Create a new user
-        User user = new User();
-        user.setFirstName(registerRequest.getFirstName());
-        user.setLastName(registerRequest.getLastName());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setRole(User.Role.USER);
-        user.setCreatedAt(Instant.now());
-
-        return new RegisterResponse(userRepository.save(user).getFirstName(), user.getLastName(), user.getEmail(), user.getRole().name());
     }
 
-    public LoginResponse loginUser(LoginRequest loginRequest) {
-        // Check if the user exists
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+    public CommonResponse<HashMap<String, Object>> loginUser(LoginRequest loginRequest) {
+        try {
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                    .orElse(null);
 
-        // Check if the password is correct
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return new CommonResponse<>(Instant.now(), 400, "Invalid email or password", null);
+            }
+
+            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return new CommonResponse<>(Instant.now(), 400, "Invalid email or password", null);
+            }
+
+            String token = tokenProvider.generateToken(user.getEmail(), loginRequest.isRememberMe());
+
+            HashMap<String, Object> data = new HashMap<>();
+            data.put("firstName", user.getFirstName());
+            data.put("lastName", user.getLastName());
+            data.put("email", user.getEmail());
+            data.put("role", user.getRole().name());
+            data.put("token", token);
+
+            return new CommonResponse<>(Instant.now(), 200, "Login successful", data);
+        } catch (Exception e) {
+            return new CommonResponse<>(Instant.now(), 500, e.getMessage(), null);
         }
-
-        // Generate a JWT token
-        String token = tokenProvider.generateToken(user.getEmail(), loginRequest.isRememberMe());
-
-        return new LoginResponse(user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole().name(), token);
     }
 
     @Transactional
-    public InitiateResetPasswordResponse initiateResetPassword(InitiateResetPasswordRequest initiateResetPasswordRequest) {
-        // Check if the user exists
-        User user = userRepository.findByEmail(initiateResetPasswordRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+    public CommonResponse<HashMap<String, Object>> initiateResetPassword(InitiateResetPasswordRequest initiateResetPasswordRequest) {
+        try {
+            User user = userRepository.findByEmail(initiateResetPasswordRequest.getEmail())
+                    .orElse(null);
 
-        // Delete any previous tokens requested by the user
-        passwordResetTokenRepository.deleteByUserId(user);
+            if (user == null) {
+                return new CommonResponse<>(Instant.now(), 400, "Invalid email", null);
+            }
 
-        // Create a new token
-        String token = tokenProvider.generateToken(user.getEmail(), false);
-        PasswordResetToken passwordResetToken = new PasswordResetToken();
-        passwordResetToken.setUserId(user);
-        passwordResetToken.setToken(token);
-        passwordResetToken.setCreatedAt(Instant.now());
-        passwordResetToken.setExpiredAt(Instant.now().plus(30, ChronoUnit.MINUTES));
-        passwordResetTokenRepository.save(passwordResetToken);
 
-        // Generate a reset link
-        String resetLink = "https://localhost:8080/reset-password?token=" + token;
+            passwordResetTokenRepository.deleteByUserId(user);
 
-        // Send email
-        emailService.sendEmail(user.getEmail(), "Password Reset Request", "To reset your password, click the link below:\n" + resetLink);
+            String token = tokenProvider.generateToken(user.getEmail(), false);
+            PasswordResetToken passwordResetToken = new PasswordResetToken();
+            passwordResetToken.setUserId(user);
+            passwordResetToken.setToken(token);
+            passwordResetToken.setCreatedAt(Instant.now());
+            passwordResetToken.setExpiredAt(Instant.now().plus(30, ChronoUnit.MINUTES));
+            passwordResetTokenRepository.save(passwordResetToken);
 
-        return new InitiateResetPasswordResponse("A password reset link has been sent to your email");
+            String resetLink = appUrl + ":" + serverPort + "/reset-password?token=" + token;
+            emailService.sendEmail(user.getEmail(), "Password Reset Request", "To reset your password, click the link below:\n" + resetLink);
+
+            return new CommonResponse<>(Instant.now(), 200, "A password reset link has been sent to your email", null);
+        } catch (Exception e) {
+            return new CommonResponse<>(Instant.now(), 500, e.getMessage(), null);
+        }
     }
 
-    public FinaliseResetPasswordResponse finaliseResetPassword(FinaliseResetPasswordRequest finaliseResetPasswordRequest) {
-        // Check if the token exists
-        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(finaliseResetPasswordRequest.getToken());
+    public CommonResponse<HashMap<String, Object>> finaliseResetPassword(FinaliseResetPasswordRequest finaliseResetPasswordRequest) {
+        try {
+            PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(finaliseResetPasswordRequest.getToken());
 
-        // Check if the token has expired
-        if (passwordResetToken.getExpiredAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Token has expired");
+            if (passwordResetToken.getExpiredAt().isBefore(Instant.now())) {
+                return new CommonResponse<>(Instant.now(), 400, "Password reset token has expired", null);
+            }
+
+            if (!finaliseResetPasswordRequest.getPassword().equals(finaliseResetPasswordRequest.getConfirmPassword())) {
+                return new CommonResponse<>(Instant.now(), 500, "Passwords do not match", null);
+            }
+
+            User user = passwordResetToken.getUserId();
+            user.setPassword(passwordEncoder.encode(finaliseResetPasswordRequest.getPassword()));
+            userRepository.save(user);
+
+            passwordResetTokenRepository.delete(passwordResetToken);
+
+            return new CommonResponse<>(Instant.now(), 200, "Password reset successful", null);
+        } catch (Exception e) {
+            return new CommonResponse<>(Instant.now(), 500, e.getMessage(), null);
         }
-
-        // Check if the password and confirm password match
-        if (!finaliseResetPasswordRequest.getPassword().equals(finaliseResetPasswordRequest.getConfirmPassword())) {
-            throw new IllegalArgumentException("Passwords do not match");
-        }
-
-        // Update the user's password
-        User user = passwordResetToken.getUserId();
-        user.setPassword(passwordEncoder.encode(finaliseResetPasswordRequest.getPassword()));
-        userRepository.save(user);
-
-        // Delete the token
-        passwordResetTokenRepository.delete(passwordResetToken);
-
-        return new FinaliseResetPasswordResponse("Password reset successful");
     }
 }
