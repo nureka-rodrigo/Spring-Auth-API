@@ -75,8 +75,7 @@ public class AuthService {
 
     public CommonResponse<HashMap<String, Object>> loginUser(LoginRequest loginRequest) {
         try {
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .orElse(null);
+            User user = userRepository.findByEmail(loginRequest.getEmail()).orElse(null);
 
             if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
                 return new CommonResponse<>(Instant.now(), 400, "Invalid email or password", null);
@@ -104,8 +103,7 @@ public class AuthService {
     @Transactional
     public CommonResponse<HashMap<String, Object>> initiateResetPassword(InitiateResetPasswordRequest initiateResetPasswordRequest) {
         try {
-            User user = userRepository.findByEmail(initiateResetPasswordRequest.getEmail())
-                    .orElse(null);
+            User user = userRepository.findByEmail(initiateResetPasswordRequest.getEmail()).orElse(null);
 
             if (user == null) {
                 return new CommonResponse<>(Instant.now(), 400, "Invalid email", null);
