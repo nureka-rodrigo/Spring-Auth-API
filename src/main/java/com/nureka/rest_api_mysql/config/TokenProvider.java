@@ -52,8 +52,9 @@ public class TokenProvider {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username, boolean rememberMe) {
+    public String generateToken(String username, String role, boolean rememberMe) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
         return createToken(claims, username, rememberMe);
     }
 

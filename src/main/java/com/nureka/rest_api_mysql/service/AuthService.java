@@ -85,7 +85,7 @@ public class AuthService {
                 return new CommonResponse<>(Instant.now(), 400, "Invalid email or password", null);
             }
 
-            String token = tokenProvider.generateToken(user.getEmail(), loginRequest.isRememberMe());
+            String token = tokenProvider.generateToken(user.getEmail(), user.getRole().name(), loginRequest.isRememberMe());
 
             HashMap<String, Object> data = new HashMap<>();
             data.put("firstName", user.getFirstName());
@@ -111,7 +111,7 @@ public class AuthService {
 
             passwordResetTokenRepository.deleteByUserId(user);
 
-            String token = tokenProvider.generateToken(user.getEmail(), false);
+            String token = tokenProvider.generateToken(user.getEmail(), user.getRole().name(), false);
             PasswordResetToken passwordResetToken = new PasswordResetToken();
             passwordResetToken.setUserId(user);
             passwordResetToken.setToken(token);
