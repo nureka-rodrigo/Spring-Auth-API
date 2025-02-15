@@ -13,3 +13,15 @@ CREATE TABLE users
 
 ALTER TABLE users
     ADD CONSTRAINT uc_users_email UNIQUE (email);
+
+CREATE TABLE password_reset_tokens
+(
+    id         BIGINT AUTO_INCREMENT  NOT NULL,
+    user_id    BIGINT                 NOT NULL,
+    token      VARCHAR(255)           NOT NULL,
+    created_at datetime DEFAULT NOW() NOT NULL,
+    expired_at datetime               NOT NULL,
+    CONSTRAINT pk_password_reset_tokens PRIMARY KEY (id),
+    CONSTRAINT fk_password_reset_tokens_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE = INNODB;
+
