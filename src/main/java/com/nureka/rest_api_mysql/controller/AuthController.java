@@ -1,7 +1,11 @@
 package com.nureka.rest_api_mysql.controller;
 
+import com.nureka.rest_api_mysql.request.FinaliseResetPasswordRequest;
+import com.nureka.rest_api_mysql.request.InitiateResetPasswordRequest;
 import com.nureka.rest_api_mysql.request.LoginRequest;
 import com.nureka.rest_api_mysql.request.RegisterRequest;
+import com.nureka.rest_api_mysql.response.FinaliseResetPasswordResponse;
+import com.nureka.rest_api_mysql.response.InitiateResetPasswordResponse;
 import com.nureka.rest_api_mysql.response.LoginResponse;
 import com.nureka.rest_api_mysql.response.RegisterResponse;
 import com.nureka.rest_api_mysql.service.AuthService;
@@ -34,5 +38,17 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Validated @RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = authService.loginUser(loginRequest);
         return new ResponseEntity<>(loginResponse, HttpStatus.OK);
+    }
+
+    @PostMapping("/initiate-reset-password")
+    public ResponseEntity<InitiateResetPasswordResponse> initiateResetPassword(@Validated @RequestBody InitiateResetPasswordRequest initiateResetPasswordRequest) {
+        InitiateResetPasswordResponse initiateResetPasswordResponse = authService.initiateResetPassword(initiateResetPasswordRequest);
+        return new ResponseEntity<>(initiateResetPasswordResponse, HttpStatus.OK);
+    }
+
+    @PostMapping("/finalise-reset-password")
+    public ResponseEntity<FinaliseResetPasswordResponse> finaliseResetPassword(@Validated @RequestBody FinaliseResetPasswordRequest finaliseResetPasswordRequest) {
+        FinaliseResetPasswordResponse finaliseResetPasswordResponse = authService.finaliseResetPassword(finaliseResetPasswordRequest);
+        return new ResponseEntity<>(finaliseResetPasswordResponse, HttpStatus.OK);
     }
 }
