@@ -109,7 +109,6 @@ public class AuthService {
                 return new CommonResponse<>(Instant.now(), 400, "Invalid email", null);
             }
 
-
             passwordResetTokenRepository.deleteByUserId(user);
 
             String token = tokenProvider.generateToken(user.getEmail(), false);
