@@ -7,6 +7,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -71,5 +72,10 @@ public class TokenProvider {
     public Boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
+    }
+
+    public SimpleGrantedAuthority extractRole(String token) {
+        String role = extractClaim(token, claims -> (String) claims.get("role"));
+        return new SimpleGrantedAuthority("ROLE_" + role);
     }
 }
