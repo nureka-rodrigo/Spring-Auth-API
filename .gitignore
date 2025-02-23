@@ -37,4 +37,4 @@ build/
 
 ### Environment ###
 *.env
-secret.properties
+env.properties

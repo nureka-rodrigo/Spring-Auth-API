@@ -27,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final EmailService emailService;
-    @Value("${app.url}")
+    @Value("${server.url}")
     private String appUrl;
     @Value("${server.port}")
     private String serverPort;
